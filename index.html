@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study-Hub — Project Proposal</title>
+<style>
+  :root {
+    --bg: #faf9f7;
+    --card: #ffffff;
+    --ink: #1c1c1c;
+    --muted: #6b6b6b;
+    --line: #e4e2dd;
+    --accent: #2f8f4e;
+    --accent-dim: #e4f3e8;
+    --amber: #c98a1f;
+    --red: #c0392b;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 48px 24px 96px; }
+  header.page { margin-bottom: 40px; }
+  h1 { font-size: 2rem; margin: 0 0 8px; }
+  .tagline {
+    font-size: 1.15rem;
+    color: var(--muted);
+    margin: 0;
+  }
+  .meta-row {
+    margin-top: 16px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin-bottom: 24px;
+  }
+  section h2 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin: 0 0 16px;
+  }
+  section h3 {
+    font-size: 1rem;
+    margin: 20px 0 6px;
+  }
+  section h3:first-of-type { margin-top: 0; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  .pill {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    margin-right: 6px;
+  }
+  .pill.out { background: #f3e4e4; color: var(--red); }
+  .pill.v2 { background: #f3ecdc; color: var(--amber); }
+
+  .question-block {
+    border-left: 3px solid var(--line);
+    padding: 4px 0 4px 16px;
+    margin-bottom: 18px;
+  }
+  .question-block p.q { font-weight: 600; margin-bottom: 6px; }
+  .question-block textarea {
+    width: 100%;
+    min-height: 60px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    resize: vertical;
+    background: #fdfdfc;
+  }
+  .question-block .hint {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  table.roadmap {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+  table.roadmap th, table.roadmap td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  table.roadmap th {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  table.roadmap td.week { white-space: nowrap; font-weight: 600; }
+
+  .status-key { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 8px; }
+  .status-key .item { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .dot.green { background: var(--accent); }
+  .dot.amber { background: var(--amber); }
+  .dot.gray { background: #9a9a9a; }
+  .dot.red { background: var(--red); }
+
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+  }
+  .tech-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .tech-card h4 { margin: 0 0 4px; font-size: 0.92rem; }
+  .tech-card p { margin: 0; font-size: 0.85rem; color: var(--muted); }
+  .tbd { color: var(--muted); font-style: italic; }
+
+  /* Feedback section */
+  #feedback-list { margin: 16px 0; }
+  .feedback-entry {
+    background: #fdfdfc;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .feedback-entry .meta {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .feedback-entry button.remove {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+  .feedback-entry button.remove:hover { color: var(--red); }
+  .feedback-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .feedback-form input, .feedback-form textarea, .feedback-form select {
+    font-family: inherit;
+    font-size: 0.95rem;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .feedback-form textarea { min-height: 70px; resize: vertical; }
+  .feedback-form .row { display: flex; gap: 10px; }
+  .feedback-form .row > * { flex: 1; }
+  .feedback-form button[type="submit"] {
+    align-self: flex-start;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .feedback-form button[type="submit"]:hover { opacity: 0.9; }
+  .empty-note { color: var(--muted); font-size: 0.88rem; font-style: italic; }
+  .save-note { font-size: 0.78rem; color: var(--muted); margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <h1>Study-Hub</h1>
+    <p class="tagline">A lightweight, ambient study-presence app for the friends you already have — see who's live, what they're working on, and study alongside them without scheduling anything.</p>
+    <div class="meta-row">Design, Build, Ship — Project Proposal · Last updated: <span id="today"></span></div>
+  </header>
+
+  <!-- USERS -->
+  <section>
+    <h2>Users</h2>
+    <h3>Who they are</h3>
+    <p>Students juggling school alongside other responsibilities (jobs, clubs, leadership roles) who already have an existing friend group they'd study with — not strangers matched by an algorithm. The first version is scoped to a closed friend graph: people the founder already interacts with, who opt in by creating an account via a shared link.</p>
+    <p>The underlying pattern this targets: people who find <em>starting</em> a study session the hardest part, whose motivation dips when days blend together, who doomscroll instead of starting, and who've found that lightweight parallel/"body doubling" presence — not a scheduled call, just knowing someone else is also working — helps them begin and stick with it.</p>
+
+    <h3>Discovery questions &amp; responses</h3>
+    <p class="hint" style="margin-bottom:16px; color:var(--muted); font-size:0.85rem;">Ask about current behavior only — no mention of Study-Hub, no "would you use this." Fill in real responses below as interviews happen.</p>
+
+    <div class="question-block">
+      <p class="q">1. Tell me about the last time you sat down to study or do homework. Walk me through it step by step — from the moment you decided to start, to whatever happened after.</p>
+      <textarea placeholder="Response notes..."></textarea>
+    </div>
+    <div class="question-block">
+      <p class="q">2. Think of the last time you knew you needed to start an assignment but put it off. What were you doing instead, and what actually got you to finally start, if anything did?</p>
+      <textarea placeholder="Response notes..."></textarea>
+    </div>
+    <div class="question-block">
+      <p class="q">3. When's the last time you worked or studied alongside someone else, in person or over a call — what did that actually look like, and how did it compare to working by yourself?</p>
+      <textarea placeholder="Response notes..."></textarea>
+    </div>
+    <div class="question-block">
+      <p class="q">4. What do you currently do, if anything, when you're trying to focus and keep yourself on track while working alone — apps, timers, texting someone, leaving your door open, anything?</p>
+      <textarea placeholder="Response notes..."></textarea>
+    </div>
+    <div class="question-block">
+      <p class="q">5. Tell me about the last time you got pulled away or distracted in the middle of a study session. What happened after — did you get back to it, and how long did that take?</p>
+      <textarea placeholder="Response notes..."></textarea>
+    </div>
+    <p class="save-note">Note: these text areas are not saved automatically on reload — copy responses into this file directly, or use the Feedback log below to record findings permanently.</p>
+  </section>
+
+  <!-- FOCUS -->
+  <section>
+    <h2>Focus</h2>
+    <p><span class="pill">Systems</span> deep-dive — the architecture behind the app: the data model, background jobs, real-time sync, and the services it connects to. Design and AI stay functional but intentionally un-polished; this project is not betting on visual refinement or model integration.</p>
+    <h3>What "deep" means here</h3>
+    <ul>
+      <li><strong>Data model:</strong> users, friendships, and sessions — including how a session's status is represented over time, not just its current value.</li>
+      <li><strong>Real-time sync:</strong> Supabase Realtime Presence broadcasting live status changes to friends with no polling.</li>
+      <li><strong>Background work (v2):</strong> a scheduled check-in mechanism that monitors session freshness and transitions state automatically when a user goes quiet.</li>
+      <li><strong>State machine design:</strong> active → checking-in → reconnecting → offline (clean) → offline (timeout) → resume, with accessible (non-color-only) indicators for each.</li>
+    </ul>
+    <div class="status-key">
+      <div class="item"><span class="dot green"></span> Active — recently updated</div>
+      <div class="item"><span class="dot amber"></span> Check-in pending (v2)</div>
+      <div class="item"><span class="dot gray"></span> Offline — ended cleanly</div>
+      <div class="item"><span class="dot red"></span> Offline — timed out, no response (v2)</div>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section>
+    <h2>Roadmap</h2>
+    <table class="roadmap">
+      <thead>
+        <tr><th>Window</th><th>Focus</th><th>Build</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="week">Nov 3–10<br><span class="pill">Prep</span></td>
+          <td>De-risk the core technical bet</td>
+          <td>
+            <ul>
+              <li>Set up Supabase project: auth, <code>profiles</code>, <code>friendships</code>, <code>sessions</code> tables</li>
+              <li><strong>Spike Supabase Realtime Presence</strong> across two accounts/tabs — confirm join/leave events fire reliably and promptly on disconnect (sleep, closed tab, dropped wifi)</li>
+              <li>Basic app shell: login, friends list, status feed scaffolding</li>
+            </ul>
+          </td>
+        </tr>
+        <tr>
+          <td class="week">Nov 10–17<br><span class="pill">v1 due</span></td>
+          <td>Thin, real, end-to-end loop</td>
+          <td>
+            <ul>
+              <li>Create account; add a friend via shared link/code</li>
+              <li>Start a session with a free-text topic</li>
+              <li>Friend sees name, green dot, topic text, "started X min ago" — live, via Presence</li>
+              <li>Manual stop button</li>
+              <li>Closing tab / losing connection flips status to gray automatically (no custom logic needed — native Presence leave event)</li>
+              <li>Two states only: <strong>green</strong>, <strong>gray</strong></li>
+            </ul>
+          </td>
+        </tr>
+        <tr>
+          <td class="week">Nov 17–24<br><span class="pill v2">No class (Thanksgiving)</span></td>
+          <td>Hardest remaining piece — give it the most calendar time</td>
+          <td>
+            <ul>
+              <li>Check-in state machine: 30-min check-in prompt, 10-min grace period, reconnect grace window (1–2 min, shown as neutral "reconnecting")</li>
+              <li>Red (timeout, no response) vs. gray (clean stop) distinction, with accessible icons for each state (not color-only)</li>
+              <li>Resume: reconnecting within the grace window continues the same session/clock</li>
+            </ul>
+          </td>
+        </tr>
+        <tr>
+          <td class="week">Nov 24–Dec 1<br><span class="pill v2">v2 / Project Fair</span></td>
+          <td>Polish for demo</td>
+          <td>
+            <ul>
+              <li>Preset topic list (grows from free-text entries over time)</li>
+              <li>Hide-status toggle</li>
+              <li>"Recently active" / "longest active" list (lightweight, non-comparative)</li>
+              <li>Accessibility and visual pass; bug fixes; demo run-through</li>
+            </ul>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Explicitly out of scope (this quarter)</h3>
+    <ul>
+      <li><span class="pill out">Out</span> Push notifications (alerting a friend who isn't actively using the app) — in-app only, backburner for future</li>
+      <li><span class="pill out">Out</span> Solving task-overwhelm/paralysis (too many tasks, not knowing where to start) — a non-goal; this product addresses starting and staying, not prioritization</li>
+      <li><span class="pill out">Out</span> Peer-to-peer "check in on a friend" nudges — different mechanism (social nudging vs. ambient presence), parked for later</li>
+      <li><span class="pill out">Out</span> Milestone/achievement broadcast posts ("finished X milestone") — parked for later</li>
+      <li><span class="pill out">Out</span> Creative/generative visualizer skin on live sessions — parked for later</li>
+      <li><span class="pill out">Out</span> Badges / comparative gamification — may revisit lightly, not core</li>
+    </ul>
+  </section>
+
+  <!-- TECH STACK -->
+  <section>
+    <h2>Tech stack</h2>
+    <div class="tech-grid">
+      <div class="tech-card">
+        <h4>Auth &amp; Database</h4>
+        <p>Supabase (Postgres) — users, friendships, sessions tables; row-level security scoped to friend relationships</p>
+      </div>
+      <div class="tech-card">
+        <h4>Real-time layer</h4>
+        <p>Supabase Realtime Presence — live status broadcast on top of existing auth/RLS, no separate socket infra to own</p>
+      </div>
+      <div class="tech-card">
+        <h4>Background jobs (v2)</h4>
+        <p>Supabase Edge Functions (scheduled) for check-in timeout logic</p>
+      </div>
+      <div class="tech-card">
+        <h4>Frontend</h4>
+        <p class="tbd">TBD — framework not yet decided</p>
+      </div>
+      <div class="tech-card">
+        <h4>Hosting</h4>
+        <p class="tbd">TBD</p>
+      </div>
+      <div class="tech-card">
+        <h4>Notifications (future)</h4>
+        <p class="tbd">Web Push (VAPID) if/when out-of-app notifications are revisited — not in current scope</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEEDBACK -->
+  <section>
+    <h2>Feedback log</h2>
+    <p>Running notes from interviews, playtests, and classmate/instructor feedback. Saved locally in this browser.</p>
+
+    <form class="feedback-form" id="feedback-form">
+      <div class="row">
+        <input type="text" id="fb-source" placeholder="Source (e.g. friend name, instructor, playtest)" required>
+        <input type="date" id="fb-date" required>
+      </div>
+      <textarea id="fb-note" placeholder="What did they say or observe?" required></textarea>
+      <button type="submit">Add entry</button>
+    </form>
+
+    <div id="feedback-list"></div>
+    <p class="empty-note" id="feedback-empty">No feedback logged yet.</p>
+  </section>
+
+</div>
+
+<script>
+  document.getElementById('today').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const STORAGE_KEY = 'studyhub-feedback-log';
+  const form = document.getElementById('feedback-form');
+  const list = document.getElementById('feedback-list');
+  const emptyNote = document.getElementById('feedback-empty');
+
+  function loadEntries() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveEntries(entries) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  }
+
+  function render() {
+    const entries = loadEntries();
+    list.innerHTML = '';
+    emptyNote.style.display = entries.length ? 'none' : 'block';
+    entries.slice().reverse().forEach((entry, idx) => {
+      const realIndex = entries.length - 1 - idx;
+      const div = document.createElement('div');
+      div.className = 'feedback-entry';
+      div.innerHTML = `
+        <button class="remove" data-index="${realIndex}" title="Remove">✕</button>
+        <div class="meta">${escapeHtml(entry.source)} · ${entry.date}</div>
+        <div>${escapeHtml(entry.note)}</div>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const entries = loadEntries();
+    entries.push({
+      source: document.getElementById('fb-source').value,
+      date: document.getElementById('fb-date').value,
+      note: document.getElementById('fb-note').value
+    });
+    saveEntries(entries);
+    form.reset();
+    render();
+  });
+
+  list.addEventListener('click', function (e) {
+    if (e.target.classList.contains('remove')) {
+      const entries = loadEntries();
+      entries.splice(Number(e.target.dataset.index), 1);
+      saveEntries(entries);
+      render();
+    }
+  });
+
+  render();
+</script>
+
+</body>
+</html>
