@@ -246,6 +246,16 @@
       <div class="item"><span class="dot gray"></span> Offline — ended cleanly</div>
       <div class="item"><span class="dot red"></span> Offline — timed out, no response (v2)</div>
     </div>
+
+    <h3>Engineering guardrails for background work</h3>
+    <p class="hint" style="margin-bottom:10px; color:var(--muted); font-size:0.85rem;">Written after a separate course project (unrelated to Study-Hub) burned through a Supabase account's entire egress quota: a cron-scheduled job re-read full tables every run just to diff them against freshly-fetched data, on a schedule with no regard for how little actually changed between runs. These rules are binding for the v2 check-in/timeout job, the only piece of Study-Hub that introduces scheduled background work.</p>
+    <ul>
+      <li><strong>No full-table fetch-to-diff.</strong> The check-in job must query only sessions that could possibly be stale — e.g. <code>WHERE status = 'active' AND started_at &lt; now() - interval '30 minutes'</code> — never pull every session row to check ages in application code.</li>
+      <li><strong>Let Postgres filter, not the app.</strong> If a write only matters when a value actually changed, express that in the query/upsert itself; don't read a table first just to compare it in JavaScript.</li>
+      <li><strong>Match the interval to how fast the data actually changes.</strong> A 30-minute check-in threshold does not need a sub-minute cron tick — checking every 1–5 minutes is still well within useful precision at a fraction of the cost.</li>
+      <li><strong>One job, one responsibility.</strong> Don't let two code paths (e.g. a client poll and a server cron) both independently touch the same data — pick a single owner.</li>
+      <li><strong>Watch it on day one.</strong> After deploying any new scheduled job, check the Supabase usage dashboard within the first 24 hours to confirm actual read/write volume matches expectations before leaving it unattended.</li>
+    </ul>
   </section>
 
   <!-- ROADMAP -->

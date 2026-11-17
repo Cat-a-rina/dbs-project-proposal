@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Study-Hub — live presence MVP</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 480px; margin: 40px auto; padding: 0 16px; }
+  input { padding: 8px; font-size: 1rem; width: 100%; margin-bottom: 8px; box-sizing: border-box; }
+  button { padding: 8px 16px; font-size: 0.95rem; cursor: pointer; margin-right: 6px; }
+  ul { list-style: none; padding: 0; }
+  li { padding: 8px; border: 1px solid #ccc; margin-bottom: 6px; border-radius: 4px; }
+  #status { font-size: 0.8rem; color: #666; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h1>Study-Hub — live test</h1>
+
+<div id="name-gate">
+  <input id="name-input" placeholder="Your name">
+  <button id="join-btn">Join</button>
+</div>
+
+<div id="main" style="display:none;">
+  <input id="topic-input" placeholder="What are you working on?">
+  <button id="start-btn">Start Session</button>
+  <button id="stop-btn" style="display:none;">Stop</button>
+
+  <h3>Who's online</h3>
+  <ul id="online-list"></ul>
+  <div id="status"></div>
+</div>
+
+<script>
+  // SUPABASE_URL and SUPABASE_ANON_KEY come from config.js (gitignored, not committed).
+  // See config.example.js for the template.
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let channel;
+  let myName;
+  let lastState = {};
+
+  document.getElementById('join-btn').onclick = async () => {
+    myName = document.getElementById('name-input').value.trim();
+    if (!myName) return;
+
+    const { error } = await sb.auth.signInAnonymously();
+    if (error) {
+      document.getElementById('status').textContent = 'Auth error: ' + error.message;
+      return;
+    }
+
+    document.getElementById('name-gate').style.display = 'none';
+    document.getElementById('main').style.display = 'block';
+    joinChannel();
+  };
+
+  function joinChannel() {
+    channel = sb.channel('study-room');
+
+    channel.on('presence', { event: 'sync' }, () => {
+      lastState = channel.presenceState();
+      renderOnline();
+    });
+
+    channel.subscribe(async (status) => {
+      document.getElementById('status').textContent = 'connection: ' + status;
+      if (status === 'SUBSCRIBED') {
+        await channel.track({ name: myName, topic: null, started_at: null });
+      }
+    });
+  }
+
+  function renderOnline() {
+    const list = document.getElementById('online-list');
+    list.innerHTML = '';
+    Object.values(lastState).flat().forEach(p => {
+      const li = document.createElement('li');
+      li.textContent = p.topic
+        ? `🟢 ${p.name} — ${p.topic} (started ${timeAgo(p.started_at)})`
+        : `⚪ ${p.name} (idle)`;
+      list.appendChild(li);
+    });
+  }
+
+  function timeAgo(iso) {
+    if (!iso) return 'just now';
+    const mins = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000));
+    return mins === 0 ? 'just now' : mins + ' min ago';
+  }
+
+  setInterval(renderOnline, 30000);
+
+  document.getElementById('start-btn').onclick = async () => {
+    const topic = document.getElementById('topic-input').value.trim() || 'studying';
+    await channel.track({ name: myName, topic, started_at: new Date().toISOString() });
+    document.getElementById('start-btn').style.display = 'none';
+    document.getElementById('stop-btn').style.display = 'inline-block';
+  };
+
+  document.getElementById('stop-btn').onclick = async () => {
+    await channel.track({ name: myName, topic: null, started_at: null });
+    document.getElementById('stop-btn').style.display = 'none';
+    document.getElementById('start-btn').style.display = 'inline-block';
+  };
+</script>
+
+</body>
+</html>

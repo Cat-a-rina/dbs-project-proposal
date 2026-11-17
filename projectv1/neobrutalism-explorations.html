@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study-Hub — Neobrutalism Explorations (UI only, parked for later)</title>
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f1ef;
+    color: #111;
+  }
+  .intro {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px 20px;
+  }
+  .intro h1 { font-size: 1.6rem; margin-bottom: 6px; }
+  .intro p { color: #444; line-height: 1.5; }
+  .intro .flag {
+    background: #fff3cd;
+    border: 2px solid #111;
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    margin-top: 14px;
+  }
+  nav.toc {
+    max-width: 900px;
+    margin: 0 auto 30px;
+    padding: 0 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  nav.toc a {
+    font-size: 0.8rem;
+    text-decoration: none;
+    color: #111;
+    border: 2px solid #111;
+    padding: 5px 10px;
+    border-radius: 4px;
+    background: #fff;
+  }
+  nav.toc a:hover { background: #111; color: #fff; }
+
+  /* ===== shared variant template, driven by CSS vars per [data-theme] ===== */
+  section.variant {
+    --bg: #fff;
+    --panel: #fff;
+    --ink: #111;
+    --accent: #ffde59;
+    --accent2: #ff5c8a;
+    --border: #111;
+    --borderW: 3px;
+    --shadowColor: #111;
+    --shadowOff: 6px;
+    --radius: 0px;
+    --font: Arial, sans-serif;
+    --cardBack: repeating-linear-gradient(45deg, #111, #111 6px, #333 6px, #333 12px);
+
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    padding: 36px 24px 60px;
+    border-top: 8px solid var(--ink);
+  }
+  .variant-inner { max-width: 900px; margin: 0 auto; }
+  .variant-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+    opacity: 0.7;
+  }
+  .variant-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin: 0 0 18px;
+  }
+  .panel {
+    background: var(--panel);
+    border: var(--borderW) solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadowOff) var(--shadowOff) 0 0 var(--shadowColor);
+    padding: 18px 20px;
+    margin-bottom: 20px;
+  }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .brand { font-weight: 900; font-size: 1.1rem; }
+  .btn {
+    display: inline-block;
+    background: var(--accent);
+    border: var(--borderW) solid var(--border);
+    color: var(--ink);
+    font-weight: 800;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    box-shadow: 4px 4px 0 0 var(--shadowColor);
+    cursor: pointer;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    transition: transform 0.08s ease;
+  }
+  .btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 0 var(--shadowColor); }
+
+  .online-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .online-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: var(--borderW) solid var(--border);
+    background: var(--panel);
+    padding: 5px 10px 5px 8px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #28c76f;
+    box-shadow: 0 0 0 0 rgba(40,199,111, 0.6);
+    animation: pulse 1.6s infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(40,199,111,0.55); }
+    70% { box-shadow: 0 0 0 8px rgba(40,199,111,0); }
+    100% { box-shadow: 0 0 0 0 rgba(40,199,111,0); }
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-top: 16px;
+  }
+  @media (max-width: 700px) { .card-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .flip-card {
+    perspective: 800px;
+    height: 150px;
+  }
+  .flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s;
+    transform-style: preserve-3d;
+  }
+  .flip-card:hover .flip-inner,
+  .flip-card.is-flipped .flip-inner {
+    transform: rotateY(180deg);
+  }
+  .flip-face {
+    position: absolute;
+    inset: 0;
+    border: var(--borderW) solid var(--border);
+    border-radius: var(--radius);
+    backface-visibility: hidden;
+    box-shadow: 4px 4px 0 0 var(--shadowColor);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 8px;
+  }
+  .flip-back {
+    background: var(--cardBack);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+  }
+  .flip-front {
+    background: var(--panel);
+    transform: rotateY(180deg);
+  }
+  .flip-front.is-live { border-color: #28c76f; box-shadow: 4px 4px 0 0 #1f9d57; }
+  .flip-front .name { font-weight: 900; font-size: 0.9rem; }
+  .flip-front .topic { font-size: 0.72rem; margin-top: 4px; opacity: 0.8; }
+  .flip-front .live-tag {
+    margin-top: 6px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #1f9d57;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .log-feed {
+    margin-top: 14px;
+    border: var(--borderW) solid var(--border);
+    border-radius: var(--radius);
+    background: var(--accent2);
+    color: var(--ink);
+    padding: 10px 14px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    box-shadow: 4px 4px 0 0 var(--shadowColor);
+  }
+  .hint-row { font-size: 0.7rem; opacity: 0.6; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>Study-Hub — Neobrutalism explorations</h1>
+  <p>Ten aesthetic directions for the same dashboard components (online row, card grid with flip-on-live, completion log). All ten use the exact same markup/layout — only color, border weight, shadow, and type change — so this is purely a look-and-feel exercise, not a functional build.</p>
+  <div class="flag">Parked: these are visual references only. No backend logic here. Hover any face-down card to preview the flip animation.</div>
+</div>
+
+<nav class="toc">
+  <a href="#v1">1. Classic</a>
+  <a href="#v2">2. Hot Pop</a>
+  <a href="#v3">3. Soft Mint</a>
+  <a href="#v4">4. Red Alert</a>
+  <a href="#v5">5. Sunset Earth</a>
+  <a href="#v6">6. Terminal</a>
+  <a href="#v7">7. Collegiate</a>
+  <a href="#v8">8. Riso Pastel</a>
+  <a href="#v9">9. Dark Neon</a>
+  <a href="#v10">10. Pop Art</a>
+</nav>
+
+<!-- 1 -->
+<section id="v1" class="variant" style="--bg:#f7f5f0; --panel:#ffffff; --ink:#111111; --accent:#ffde59; --accent2:#ff5c8a; --border:#111111; --borderW:3px; --shadowColor:#111111; --shadowOff:6px; --radius:0px; --font:Arial, sans-serif;">
+  <div class="variant-inner">
+    <div class="variant-label">Variant 1</div>
+    <div class="variant-title">Classic Neobrutalism — acid yellow, hard black shadow</div>
+    <div class="panel">
+      <div class="topbar">
+        <div class="brand">STUDY-HUB</div>
+        <button class="btn">+ Start Session</button>
+      </div>
+      <div class="online-row">
+        <div class="online-chip"><span class="dot"></span> Max</div>
+        <div class="online-chip"><span class="dot"></span> Priya</div>
+        <div class="online-chip"><span class="dot"></span> Jon</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Sam</div></div></div></div>
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Max</div><div class="topic">CS 151 PSET</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Priya</div><div class="topic">Essay draft</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Jon</div></div></div></div>
+    </div>
+    <div class="log-feed">⚡ Max just completed CS 151 Problem Set 4!</div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="v2" class="variant" style="--bg:#ffffff; --panel:#ffffff; --ink:#0c0c0c; --accent:#00e5ff; --accent2:#ff2d78; --border:#0c0c0c; --borderW:4px; --shadowColor:#ff2d78; --shadowOff:7px; --radius:0px; --font:'Trebuchet MS', sans-serif;">
+  <div class="variant-inner">
+    <div class="variant-label">Variant 2</div>
+    <div class="variant-title">Hot Pop — cyan + magenta, colored shadow instead of black</div>
+    <div class="panel">
+      <div class="topbar">
+        <div class="brand">STUDY-HUB</div>
+        <button class="btn">+ Start Session</button>
+      </div>
+      <div class="online-row">
+        <div class="online-chip"><span class="dot"></span> Max</div>
+        <div class="online-chip"><span class="dot"></span> Priya</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Max</div><div class="topic">CS 151 PSET</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Sam</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Jon</div></div></div></div>
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Priya</div><div class="topic">Essay draft</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+    </div>
+    <div class="log-feed">⚡ Priya just completed Essay draft — Ch. 2!</div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="v3" class="variant" style="--bg:#f4f1fb; --panel:#ffffff; --ink:#2e2140; --accent:#c9f7d8; --accent2:#e3d2ff; --border:#2e2140; --borderW:2px; --shadowColor:#b8a8e0; --shadowOff:5px; --radius:10px; --font:'Segoe UI', sans-serif;">
+  <div class="variant-inner">
+    <div class="variant-label">Variant 3</div>
+    <div class="variant-title">Soft-brutalism — pastel mint/lavender, rounded corners, thin border</div>
+    <div class="panel">
+      <div class="topbar">
+        <div class="brand">STUDY-HUB</div>
+        <button class="btn">+ Start Session</button>
+      </div>
+      <div class="online-row">
+        <div class="online-chip"><span class="dot"></span> Max</div>
+        <div class="online-chip"><span class="dot"></span> Jon</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Max</div><div class="topic">CS 151 PSET</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Priya</div></div></div></div>
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Jon</div><div class="topic">Reading</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Sam</div></div></div></div>
+    </div>
+    <div class="log-feed">⚡ Jon just completed Reading — Week 7!</div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="v4" class="variant" style="--bg:#111111; --panel:#1b1b1b; --ink:#ffffff; --accent:#ff1e1e; --accent2:#ffffff; --border:#ff1e1e; --borderW:4px; --shadowColor:#ff1e1e; --shadowOff:6px; --radius:0px; --font:'Impact', 'Arial Narrow', sans-serif;">
+  <div class="variant-inner">
+    <div class="variant-label">Variant 4</div>
+    <div class="variant-title" style="text-transform:uppercase; letter-spacing:0.03em;">Red Alert — black/red/white, condensed, aggressive</div>
+    <div class="panel">
+      <div class="topbar">
+        <div class="brand">STUDY-HUB</div>
+        <button class="btn" style="color:#111;">+ Start Session</button>
+      </div>
+      <div class="online-row">
+        <div class="online-chip"><span class="dot"></span> Max</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Max</div><div class="topic">CS 151 PSET</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Sam</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Jon</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Priya</div></div></div></div>
+    </div>
+    <div class="log-feed" style="background:#ff1e1e; color:#fff;">⚡ MAX JUST COMPLETED CS 151 PSET 4!</div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="v5" class="variant" style="--bg:#f3e9da; --panel:#fff7ec; --ink:#4a2e1b; --accent:#e8a33d; --accent2:#c2543b; --border:#4a2e1b; --borderW:3px; --shadowColor:#4a2e1b; --shadowOff:5px; --radius:4px; --font:Georgia, serif; --cardBack: repeating-linear-gradient(45deg, #4a2e1b, #4a2e1b 6px, #6b4226 6px, #6b4226 12px);">
+  <div class="variant-inner">
+    <div class="variant-label">Variant 5</div>
+    <div class="variant-title">Sunset Earth — warm ochre/terracotta, serif type</div>
+    <div class="panel">
+      <div class="topbar">
+        <div class="brand">STUDY-HUB</div>
+        <button class="btn">+ Start Session</button>
+      </div>
+      <div class="online-row">
+        <div class="online-chip"><span class="dot"></span> Priya</div>
+        <div class="online-chip"><span class="dot"></span> Jon</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Max</div></div></div></div>
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Priya</div><div class="topic">Essay draft</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Sam</div></div></div></div>
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Jon</div><div class="topic">Reading</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+    </div>
+    <div class="log-feed">⚡ Priya just completed Essay draft — Ch. 2!</div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="v6" class="variant" style="--bg:#0a0f0a; --panel:#0e150e; --ink:#39ff6a; --accent:#39ff6a; --accent2:#113311; --border:#39ff6a; --borderW:2px; --shadowColor:#1f8f3c; --shadowOff:4px; --radius:0px; --font:'Courier New', monospace; --cardBack: repeating-linear-gradient(45deg, #0a0f0a, #0a0f0a 6px, #113311 6px, #113311 12px);">
+  <div class="variant-inner">
+    <div class="variant-label">Variant 6</div>
+    <div class="variant-title">Lime Terminal — monospace, CRT-green on black</div>
+    <div class="panel">
+      <div class="topbar">
+        <div class="brand">&gt; STUDY-HUB_</div>
+        <button class="btn" style="color:#0a0f0a;">[ START SESSION ]</button>
+      </div>
+      <div class="online-row">
+        <div class="online-chip"><span class="dot"></span> max@live</div>
+        <div class="online-chip"><span class="dot"></span> priya@live</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">max</div><div class="topic">cs151.pset4</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">sam</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">jon</div></div></div></div>
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">priya</div><div class="topic">essay.draft</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+    </div>
+    <div class="log-feed" style="background:#113311; color:#39ff6a;">&gt; log: max completed cs151.pset4 [OK]</div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="v7" class="variant" style="--bg:#f5f1e8; --panel:#ffffff; --ink:#4b0f1a; --accent:#c9a94a; --accent2:#4b0f1a; --border:#4b0f1a; --borderW:3px; --shadowColor:#4b0f1a; --shadowOff:6px; --radius:0px; --font:'Georgia', serif;">
+  <div class="variant-inner">
+    <div class="variant-label">Variant 7</div>
+    <div class="variant-title">Collegiate — maroon &amp; gold, varsity-letter feel</div>
+    <div class="panel">
+      <div class="topbar">
+        <div class="brand">STUDY-HUB</div>
+        <button class="btn">+ Start Session</button>
+      </div>
+      <div class="online-row">
+        <div class="online-chip"><span class="dot"></span> Jon</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Max</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Priya</div></div></div></div>
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Jon</div><div class="topic">Reading</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Sam</div></div></div></div>
+    </div>
+    <div class="log-feed" style="background:#4b0f1a; color:#f5f1e8;">⚡ Jon just completed Reading — Week 7!</div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="v8" class="variant" style="--bg:#fdf6f0; --panel:#ffffff; --ink:#2b2b2b; --accent:#ffb3c6; --accent2:#aee0ff; --border:#2b2b2b; --borderW:2px; --shadowColor:#ffb3c6; --shadowOff:5px; --radius:6px; --font:'Segoe UI', sans-serif;">
+  <div class="variant-inner">
+    <div class="variant-label">Variant 8</div>
+    <div class="variant-title">Riso Pastel — pink/blue/yellow print-shop feel, offset shadow in color</div>
+    <div class="panel">
+      <div class="topbar">
+        <div class="brand">STUDY-HUB</div>
+        <button class="btn">+ Start Session</button>
+      </div>
+      <div class="online-row">
+        <div class="online-chip"><span class="dot"></span> Max</div>
+        <div class="online-chip"><span class="dot"></span> Sam</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Max</div><div class="topic">CS 151 PSET</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Sam</div><div class="topic">Lab report</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Jon</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Priya</div></div></div></div>
+    </div>
+    <div class="log-feed">⚡ Sam just completed Lab report draft!</div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section id="v9" class="variant" style="--bg:#070707; --panel:#121212; --ink:#f5f5f5; --accent:#39ff14; --accent2:#ff00ea; --border:#f5f5f5; --borderW:2px; --shadowColor:#39ff14; --shadowOff:5px; --radius:0px; --font:'Trebuchet MS', sans-serif; --cardBack: repeating-linear-gradient(45deg, #070707, #070707 6px, #1a1a1a 6px, #1a1a1a 12px);">
+  <div class="variant-inner">
+    <div class="variant-label">Variant 9</div>
+    <div class="variant-title">Dark Neon — black base, neon green/magenta glow shadows</div>
+    <div class="panel">
+      <div class="topbar">
+        <div class="brand">STUDY-HUB</div>
+        <button class="btn" style="color:#070707;">+ Start Session</button>
+      </div>
+      <div class="online-row">
+        <div class="online-chip"><span class="dot"></span> Priya</div>
+        <div class="online-chip"><span class="dot"></span> Jon</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Max</div></div></div></div>
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Priya</div><div class="topic">Essay draft</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Jon</div><div class="topic">Reading</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Sam</div></div></div></div>
+    </div>
+    <div class="log-feed" style="background:#ff00ea; color:#070707;">⚡ Jon just completed Reading — Week 7!</div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section id="v10" class="variant" style="--bg:#fff7e6; --panel:#ffffff; --ink:#1a1a1a; --accent:#ffd400; --accent2:#2f6fed; --border:#1a1a1a; --borderW:4px; --shadowColor:#d81e3f; --shadowOff:7px; --radius:0px; --font:'Comic Sans MS', 'Trebuchet MS', sans-serif;">
+  <div class="variant-inner">
+    <div class="variant-label">Variant 10</div>
+    <div class="variant-title">Pop Art — primary colors, comic dot texture, bold outline</div>
+    <div class="panel" style="background-image: radial-gradient(#1a1a1a 1px, transparent 1px); background-size: 10px 10px; background-color:#fff;">
+      <div class="topbar">
+        <div class="brand">STUDY-HUB!</div>
+        <button class="btn">POP! Start</button>
+      </div>
+      <div class="online-row">
+        <div class="online-chip"><span class="dot"></span> Max</div>
+        <div class="online-chip"><span class="dot"></span> Sam</div>
+        <div class="online-chip"><span class="dot"></span> Jon</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Max</div><div class="topic">CS 151 PSET</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Sam</div><div class="topic">Lab report</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card is-flipped"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front is-live"><div class="name">Jon</div><div class="topic">Reading</div><div class="live-tag"><span class="dot"></span>LIVE</div></div></div></div>
+      <div class="flip-card"><div class="flip-inner"><div class="flip-face flip-back">OFFLINE</div><div class="flip-face flip-front"><div class="name">Priya</div></div></div></div>
+    </div>
+    <div class="log-feed">⚡ POW! Max just completed CS 151 PSET 4!</div>
+  </div>
+</section>
+
+</body>
+</html>
