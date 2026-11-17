@@ -386,7 +386,40 @@
       <li>Notifications: possible v2 addition, not yet scoped — unclear whether in-app, push, or what should actually trigger one.</li>
       <li>Personal task queue: a side panel where a user organizes their own assignments/tasks and reorders them like a playlist (drag to rearrange). Private — visible only to that user, never broadcast to friends or shown on their card. Data-model-wise this is the simplest addition so far: one table scoped entirely to its owner (<code>user_id = auth.jwt()->>'sub'</code>, same pattern as <code>profiles</code>), plus a position/order column for the drag-reorder — no cross-user authorization logic needed at all, unlike friendships or presence.</li>
       <li>Onboarding intro: a brief walkthrough of what the app does and how the UI works, shown <em>before</em> the sign-in/sign-up screen — not after — so a first-time visitor understands the product before being asked to create an account. Not yet scoped: number of steps, whether it's skippable, and whether it's shown only once (e.g. a <code>localStorage</code> flag) or every time someone isn't signed in.</li>
+      <li>Forgot password: what does someone do if they forget their password, since there's no email tied to an account to send a reset link to (username/password only, by design — see the earlier privacy decision)? Not yet scoped — options include a recovery code shown once at signup, a security question, or just asking a friend to vouch via the app itself since this is a closed friend group.</li>
     </ul>
+
+    <h3>Tech stack</h3>
+    <div class="tech-grid">
+      <div class="tech-card">
+        <h4>Auth &amp; Database</h4>
+        <p>Supabase (Postgres) — profiles, friendships tables; row-level security scoped to friend relationships</p>
+      </div>
+      <div class="tech-card">
+        <h4>Identity</h4>
+        <p>Clerk (username/password, no email) — linked to Supabase via Third-Party Auth, not the deprecated JWT-template approach</p>
+      </div>
+      <div class="tech-card">
+        <h4>Real-time layer</h4>
+        <p>Supabase Realtime Presence + Realtime Authorization — live status broadcast scoped by friendship, no polling</p>
+      </div>
+      <div class="tech-card">
+        <h4>Background jobs (v2)</h4>
+        <p>Supabase Edge Functions (scheduled) for check-in timeout logic — not yet built</p>
+      </div>
+      <div class="tech-card">
+        <h4>Frontend</h4>
+        <p>Next.js (App Router)</p>
+      </div>
+      <div class="tech-card">
+        <h4>Hosting</h4>
+        <p>Vercel</p>
+      </div>
+      <div class="tech-card">
+        <h4>Notifications (future)</h4>
+        <p class="tbd">Web Push (VAPID) if/when out-of-app notifications are revisited — not in current scope</p>
+      </div>
+    </div>
 
     <h3>Card inspiration</h3>
     <p class="hint" style="margin-bottom:10px; color:var(--muted); font-size:0.85rem;">Reference for the collectible-card look (stat icons, rarity stars, card number) — not our exact style, just the structural idea of a trading-card face.</p>
@@ -519,36 +552,6 @@
     </ul>
   </section>
 
-  <!-- TECH STACK -->
-  <section>
-    <h2>Tech stack</h2>
-    <div class="tech-grid">
-      <div class="tech-card">
-        <h4>Auth &amp; Database</h4>
-        <p>Supabase (Postgres) — users, friendships, sessions tables; row-level security scoped to friend relationships</p>
-      </div>
-      <div class="tech-card">
-        <h4>Real-time layer</h4>
-        <p>Supabase Realtime Presence — live status broadcast on top of existing auth/RLS, no separate socket infra to own</p>
-      </div>
-      <div class="tech-card">
-        <h4>Background jobs (v2)</h4>
-        <p>Supabase Edge Functions (scheduled) for check-in timeout logic</p>
-      </div>
-      <div class="tech-card">
-        <h4>Frontend</h4>
-        <p class="tbd">TBD — framework not yet decided</p>
-      </div>
-      <div class="tech-card">
-        <h4>Hosting</h4>
-        <p class="tbd">TBD</p>
-      </div>
-      <div class="tech-card">
-        <h4>Notifications (future)</h4>
-        <p class="tbd">Web Push (VAPID) if/when out-of-app notifications are revisited — not in current scope</p>
-      </div>
-    </div>
-  </section>
 
 </div>
 
