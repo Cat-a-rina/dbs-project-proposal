@@ -90,7 +90,6 @@ function StudyHubApp() {
   const [friendUsernames, setFriendUsernames] = useState<Record<string, string>>({});
   const [addFriendInput, setAddFriendInput] = useState("");
   const [addFriendStatus, setAddFriendStatus] = useState("");
-  const [inviteLink, setInviteLink] = useState("");
 
   const ownChannelRef = useRef<RealtimeChannel | null>(null);
   const friendChannelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
@@ -144,9 +143,7 @@ function StudyHubApp() {
     // Wipe every piece of state that could hold a previous account's data in
     // this same tab (e.g. signing out and into a different test account
     // without a full page reload). Audited every useState in this
-    // component for this -- inviteLink isn't listed because it's always
-    // unconditionally overwritten right below, not merged, so there's no
-    // stale-value window for it.
+    // component for this.
     setPresenceById({});
     setFriendIds([]);
     setFriendUsernames({});
@@ -156,8 +153,6 @@ function StudyHubApp() {
     setStatus("");
     setAddFriendInput("");
     setAddFriendStatus("");
-
-    setInviteLink(typeof window !== "undefined" ? `${window.location.origin}/invite/${user.username}` : "");
 
     supabase.from("profiles").upsert({ id: user.id, username: user.username ?? user.id }).then();
 
@@ -502,18 +497,6 @@ function StudyHubApp() {
             </button>
           </div>
           {addFriendStatus && <div style={{ fontSize: "0.8rem", color: "#666" }}>{addFriendStatus}</div>}
-
-          <h3 style={{ marginTop: 24 }}>Your invite link</h3>
-          <p style={{ fontSize: "0.85rem", color: "#666" }}>
-            Share this with a friend — once they sign in and open it, you&apos;re automatically added to
-            each other&apos;s friend list.
-          </p>
-          <input
-            readOnly
-            value={inviteLink}
-            onFocus={(e) => e.target.select()}
-            style={{ padding: 8, fontSize: "0.85rem", width: "100%", boxSizing: "border-box" }}
-          />
         </div>
       )}
     </main>

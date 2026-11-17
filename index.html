@@ -373,7 +373,7 @@
 
     <h3>Other UI decisions</h3>
     <ul>
-      <li>Display name: freely editable, separate from username. Username stays permanent (used for friend-adding and invite links) and is never user-editable.</li>
+      <li>Display name: freely editable, separate from username. Username stays permanent (the only way friends add each other, now that invite links are removed) and is never user-editable.</li>
       <li>State icons needed: loading/connecting, button press feedback, success/error toasts (see design system above), and the expanded status-dot palette for the v2 check-in/timeout states.</li>
       <li>Keyboard accessibility: a full pass — sensible tab order and visible focus rings site-wide, not just the cards.</li>
       <li>Collectible-card face (when live): minimal — name, topic, start time only. No streak badge, no rarity/style variant.</li>
@@ -385,6 +385,7 @@
       <li>Pomodoro timer: optional duration. <strong>Revised</strong> from "countdown only, no auto-actions" (v1 test build) to auto-going-idle when it hits zero, with a one-click option to start again.</li>
       <li>Notifications: possible v2 addition, not yet scoped — unclear whether in-app, push, or what should actually trigger one.</li>
       <li>Personal task queue: a side panel where a user organizes their own assignments/tasks and reorders them like a playlist (drag to rearrange). Private — visible only to that user, never broadcast to friends or shown on their card. Data-model-wise this is the simplest addition so far: one table scoped entirely to its owner (<code>user_id = auth.jwt()->>'sub'</code>, same pattern as <code>profiles</code>), plus a position/order column for the drag-reorder — no cross-user authorization logic needed at all, unlike friendships or presence.</li>
+      <li>Onboarding intro: a brief walkthrough of what the app does and how the UI works, shown <em>before</em> the sign-in/sign-up screen — not after — so a first-time visitor understands the product before being asked to create an account. Not yet scoped: number of steps, whether it's skippable, and whether it's shown only once (e.g. a <code>localStorage</code> flag) or every time someone isn't signed in.</li>
     </ul>
 
     <h3>Card inspiration</h3>
@@ -472,7 +473,7 @@
           <td>Thin, real, end-to-end loop</td>
           <td>
             <ul>
-              <li>Create account; add a friend via shared link/code</li>
+              <li>Create account; add a friend by username (an invite-link version was built and tried first, then removed — it didn't behave reliably once hosted on Vercel)</li>
               <li>Start a session with a free-text topic</li>
               <li>Friend sees name, green dot, topic text, "started X min ago" — live, via Presence</li>
               <li>Manual stop button</li>
