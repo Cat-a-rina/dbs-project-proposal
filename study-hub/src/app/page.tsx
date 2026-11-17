@@ -45,13 +45,18 @@ export default function Home() {
 
   const [joined, setJoined] = useState(false);
   const [topic, setTopic] = useState("");
-  const [sessionActive, setSessionActive] = useState(false);
   const [status, setStatus] = useState("");
 
   // Presence we're actually authorized to see: only ever populated from our
   // own channel and our friends' channels (see schema.sql) -- never from
   // anyone else's, so there's nothing to filter client-side.
   const [presenceById, setPresenceById] = useState<Record<string, Presence>>({});
+  // Derived, not separately tracked: whether the Start/Stop button shows
+  // "Stop" must always match what the server actually thinks our presence
+  // is, or the two can drift apart (e.g. after a dropped/reconnected
+  // websocket) -- which is exactly what showed "Stop" while the real
+  // presence data said idle.
+  const sessionActive = !!(user && presenceById[user.id]?.topic);
   const [friendIds, setFriendIds] = useState<string[]>([]);
   const [addFriendInput, setAddFriendInput] = useState("");
   const [addFriendStatus, setAddFriendStatus] = useState("");
@@ -114,7 +119,12 @@ export default function Home() {
     channel.on("presence", { event: "sync" }, () => {
       const state = channel.presenceState<Presence>();
       const mine = pickCurrentMeta(state[user.id]);
-      if (mine) setPresenceById((prev) => ({ ...prev, [user.id]: mine }));
+      setPresenceById((prev) => {
+        if (mine) return { ...prev, [user.id]: mine };
+        const next = { ...prev };
+        delete next[user.id];
+        return next;
+      });
     });
 
     channel.subscribe(async (subStatus) => {
@@ -188,7 +198,15 @@ export default function Home() {
       channel.on("presence", { event: "sync" }, () => {
         const state = channel.presenceState<Presence>();
         const theirs = pickCurrentMeta(state[friendId]);
-        if (theirs) setPresenceById((prev) => ({ ...prev, [friendId]: theirs }));
+        setPresenceById((prev) => {
+          // "sync" also fires when they disconnect/sign out -- theirs will
+          // be undefined in that case, and the entry must be removed, not
+          // left untouched, or they'd stay stuck looking live forever.
+          if (theirs) return { ...prev, [friendId]: theirs };
+          const next = { ...prev };
+          delete next[friendId];
+          return next;
+        });
       });
 
       channel.subscribe();
@@ -205,7 +223,6 @@ export default function Home() {
       topic: chosenTopic,
       started_at: new Date().toISOString(),
     });
-    setSessionActive(true);
   }
 
   async function handleStop() {
@@ -213,7 +230,6 @@ export default function Home() {
     const displayName = user?.firstName || user?.username || "Student";
     if (!channel) return;
     await channel.track({ name: displayName, topic: null, started_at: null });
-    setSessionActive(false);
   }
 
   async function handleAddFriend() {
