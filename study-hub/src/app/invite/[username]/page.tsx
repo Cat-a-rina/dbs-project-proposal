@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 
 export default function InvitePage() {
+  return (
+    <Suspense>
+      <InviteContent />
+    </Suspense>
+  );
+}
+
+function InviteContent() {
   const { username } = useParams<{ username: string }>();
   const { isLoaded, isSignedIn, user } = useUser();
   const createClerkSupabaseClient = useClerkSupabaseClient();
