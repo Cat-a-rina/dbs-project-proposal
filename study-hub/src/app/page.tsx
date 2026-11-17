@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { UserButton, useSession, useUser } from "@clerk/nextjs";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 
 type Presence = {
@@ -32,7 +32,16 @@ function timeAgo(iso: string | null): string {
 
 export default function Home() {
   const { isLoaded, isSignedIn, user } = useUser();
+  const { session } = useSession();
   const createClerkSupabaseClient = useClerkSupabaseClient();
+
+  // isSignedIn can flip true slightly before Clerk's session token is
+  // actually ready, which is exactly the race that caused the friend-list
+  // fetch to silently run unauthenticated after an account switch. This is
+  // a plain boolean (not the `session` object itself) so effects below only
+  // re-run on a true/false transition, not on every routine token refresh
+  // (which hands back a new `session` object reference each time).
+  const sessionReady = !!session;
 
   const [joined, setJoined] = useState(false);
   const [topic, setTopic] = useState("");
@@ -80,7 +89,7 @@ export default function Home() {
   // Once signed in: make sure our profile row exists, join our own private
   // presence channel (where we publish), and load our friend list.
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || !user || ownChannelRef.current) return;
+    if (!isLoaded || !isSignedIn || !sessionReady || !user || ownChannelRef.current) return;
 
     const displayName = user.firstName || user.username || "Student";
     const supabase = createClientRef.current();
@@ -125,11 +134,13 @@ export default function Home() {
       friendChannels.forEach((c) => c.unsubscribe());
       friendChannels.clear();
     };
-    // Deliberately keyed on user?.id, not the whole `user` object: Clerk can
-    // hand back a new `user` object reference without the id changing, and
-    // that shouldn't tear down and rejoin every presence channel.
+    // Deliberately keyed on user?.id (not the whole `user` object, which can
+    // get a new reference without the id changing) and on sessionReady's
+    // true/false transitions (not on `session` itself, which gets a new
+    // reference on every routine token refresh). Either would cause this to
+    // tear down and rejoin every channel far more often than intended.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded, isSignedIn, user?.id]);
+  }, [isLoaded, isSignedIn, sessionReady, user?.id]);
 
   // Live-update our friend list the moment someone adds us, instead of only
   // picking it up on next page load. Relies on the "users can read their own
@@ -137,7 +148,7 @@ export default function Home() {
   // delivers rows that policy already lets this user select.
   useEffect(() => {
     const supabase = supabaseRef.current;
-    if (!supabase || !user) return;
+    if (!supabase || !user || !sessionReady) return;
 
     const changes = supabase
       .channel(`friendships-changes:${user.id}`)
@@ -154,10 +165,9 @@ export default function Home() {
     return () => {
       changes.unsubscribe();
     };
-    // Keyed on user?.id, not the whole `user` object -- see the join effect
-    // above for why.
+    // See the join effect above for why user?.id/sessionReady, not user/session.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded, isSignedIn, user?.id]);
+  }, [isLoaded, isSignedIn, sessionReady, user?.id]);
 
   // Open one private, read-only channel per friend so we can see their
   // status -- this only works because schema.sql's RLS policies authorize us
