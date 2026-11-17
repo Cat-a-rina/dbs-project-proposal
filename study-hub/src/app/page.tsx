@@ -31,6 +31,21 @@ function timeAgo(iso: string | null): string {
 }
 
 export default function Home() {
+  const { isLoaded, user } = useUser();
+
+  if (!isLoaded) {
+    return <main style={{ maxWidth: 480, margin: "40px auto", padding: "0 16px" }}>Loading...</main>;
+  }
+
+  // Remounting StudyHubApp whenever the signed-in user changes discards
+  // every piece of its local state in one shot -- no manual reset list to
+  // maintain as new state gets added later. The resets and epoch guards
+  // inside it stay too, as defense in depth for the brief in-between
+  // renders React itself doesn't treat as a full identity change.
+  return <StudyHubApp key={user?.id ?? "signed-out"} />;
+}
+
+function StudyHubApp() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { session } = useSession();
   const createClerkSupabaseClient = useClerkSupabaseClient();
@@ -66,6 +81,14 @@ export default function Home() {
   const friendChannelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
   const supabaseRef = useRef<SupabaseClient | null>(null);
 
+  // Bumped every time a new identity's setup effect runs. Unsubscribing a
+  // channel doesn't guarantee an in-flight event's callback won't still fire
+  // afterward -- a late update from a PREVIOUS account's channel can land
+  // after a newer account has already reset state. Every callback below
+  // checks its captured epoch against the current one and no-ops if a newer
+  // identity has since taken over, regardless of async teardown timing.
+  const epochRef = useRef(0);
+
   // re-render every 30s so "started X min ago" keeps ticking
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -84,9 +107,9 @@ export default function Home() {
     createClientRef.current = createClerkSupabaseClient;
   }, [createClerkSupabaseClient]);
 
-  async function refreshFriendIds(supabase: SupabaseClient, myId: string) {
+  async function refreshFriendIds(supabase: SupabaseClient, myId: string, myEpoch: number) {
     const { data, error } = await supabase.from("friendships").select("friend_id").eq("user_id", myId);
-    if (!error && data) {
+    if (!error && data && epochRef.current === myEpoch) {
       setFriendIds(data.map((row) => row.friend_id as string));
     }
   }
@@ -96,16 +119,26 @@ export default function Home() {
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !sessionReady || !user || ownChannelRef.current) return;
 
+    epochRef.current += 1;
+    const myEpoch = epochRef.current;
+
     const displayName = user.firstName || user.username || "Student";
     const supabase = createClientRef.current();
     supabaseRef.current = supabase;
 
-    // Wipe any state left over from a previous account in this same tab
-    // (e.g. signing out and into a different test account without a full
-    // page reload) -- otherwise their last-known presence/friends linger
-    // forever since presenceById only ever gets merged into, never cleared.
+    // Wipe every piece of state that could hold a previous account's data in
+    // this same tab (e.g. signing out and into a different test account
+    // without a full page reload). Audited every useState in this
+    // component for this -- inviteLink isn't listed because it's always
+    // unconditionally overwritten right below, not merged, so there's no
+    // stale-value window for it.
     setPresenceById({});
     setFriendIds([]);
+    setTopic("");
+    setJoined(false);
+    setStatus("");
+    setAddFriendInput("");
+    setAddFriendStatus("");
 
     setInviteLink(typeof window !== "undefined" ? `${window.location.origin}/invite/${user.username}` : "");
 
@@ -117,6 +150,7 @@ export default function Home() {
     ownChannelRef.current = channel;
 
     channel.on("presence", { event: "sync" }, () => {
+      if (epochRef.current !== myEpoch) return;
       const state = channel.presenceState<Presence>();
       const mine = pickCurrentMeta(state[user.id]);
       setPresenceById((prev) => {
@@ -128,6 +162,7 @@ export default function Home() {
     });
 
     channel.subscribe(async (subStatus) => {
+      if (epochRef.current !== myEpoch) return;
       setStatus("connection: " + subStatus);
       if (subStatus === "SUBSCRIBED") {
         await channel.track({ name: displayName, topic: null, started_at: null });
@@ -135,7 +170,7 @@ export default function Home() {
       }
     });
 
-    refreshFriendIds(supabase, user.id);
+    refreshFriendIds(supabase, user.id, myEpoch);
 
     const friendChannels = friendChannelsRef.current;
     return () => {
@@ -159,6 +194,7 @@ export default function Home() {
   useEffect(() => {
     const supabase = supabaseRef.current;
     if (!supabase || !user || !sessionReady) return;
+    const myEpoch = epochRef.current;
 
     const changes = supabase
       .channel(`friendships-changes:${user.id}`)
@@ -166,6 +202,7 @@ export default function Home() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "friendships", filter: `user_id=eq.${user.id}` },
         (payload) => {
+          if (epochRef.current !== myEpoch) return;
           const newFriendId = payload.new.friend_id as string;
           setFriendIds((prev) => (prev.includes(newFriendId) ? prev : [...prev, newFriendId]));
         },
@@ -186,6 +223,7 @@ export default function Home() {
   useEffect(() => {
     const supabase = supabaseRef.current;
     if (!supabase) return;
+    const myEpoch = epochRef.current;
 
     for (const friendId of friendIds) {
       if (friendChannelsRef.current.has(friendId)) continue;
@@ -196,6 +234,7 @@ export default function Home() {
       friendChannelsRef.current.set(friendId, channel);
 
       channel.on("presence", { event: "sync" }, () => {
+        if (epochRef.current !== myEpoch) return;
         const state = channel.presenceState<Presence>();
         const theirs = pickCurrentMeta(state[friendId]);
         setPresenceById((prev) => {
@@ -244,11 +283,7 @@ export default function Home() {
     }
     setAddFriendInput("");
     setAddFriendStatus(`Added ${username}`);
-    refreshFriendIds(supabase, user.id);
-  }
-
-  if (!isLoaded) {
-    return <main style={{ maxWidth: 480, margin: "40px auto", padding: "0 16px" }}>Loading...</main>;
+    refreshFriendIds(supabase, user.id, epochRef.current);
   }
 
   const online = Object.entries(presenceById).filter(([, p]) => !!p.topic);
@@ -289,6 +324,7 @@ export default function Home() {
                 {p.topic
                   ? `🟢 ${p.name} — ${p.topic} (started ${timeAgo(p.started_at)})`
                   : `⚪ ${p.name} (idle)`}
+                {id === user?.id && " (you)"}
               </li>
             ))}
             {online.length === 0 && idle.length === 0 && (
@@ -299,12 +335,35 @@ export default function Home() {
 
           <h3 style={{ marginTop: 24 }}>Add a friend</h3>
           <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-            <input
-              placeholder="their username"
-              value={addFriendInput}
-              onChange={(e) => setAddFriendInput(e.target.value)}
-              style={{ padding: 8, fontSize: "1rem", flex: 1, boxSizing: "border-box" }}
-            />
+            <div style={{ position: "relative", flex: 1 }}>
+              <input
+                placeholder="their username"
+                value={addFriendInput}
+                onChange={(e) => setAddFriendInput(e.target.value)}
+                style={{ padding: 8, paddingRight: 28, fontSize: "1rem", width: "100%", boxSizing: "border-box" }}
+              />
+              {addFriendInput && (
+                <button
+                  type="button"
+                  onClick={() => setAddFriendInput("")}
+                  aria-label="Clear"
+                  style={{
+                    position: "absolute",
+                    right: 4,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    fontSize: "1rem",
+                    lineHeight: 1,
+                    padding: 4,
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
             <button onClick={handleAddFriend} style={{ padding: "8px 16px" }}>
               Add
             </button>
