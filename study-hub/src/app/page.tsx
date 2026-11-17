@@ -9,6 +9,7 @@ type Presence = {
   name: string;
   topic: string | null;
   started_at: string | null;
+  duration_minutes: number | null;
 };
 
 function presenceTopic(userId: string) {
@@ -28,6 +29,15 @@ function timeAgo(iso: string | null): string {
   if (!iso) return "just now";
   const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
   return mins === 0 ? "just now" : `${mins} min ago`;
+}
+
+// Just a display, per the v2 scope decision: no auto-stop, no notification
+// when it hits zero -- purely informational.
+function timeLeft(iso: string | null, durationMinutes: number | null): string | null {
+  if (!iso || !durationMinutes) return null;
+  const elapsedMs = Date.now() - new Date(iso).getTime();
+  const remaining = Math.max(0, Math.round(durationMinutes - elapsedMs / 60000));
+  return remaining === 0 ? "time's up" : `${remaining} min left`;
 }
 
 export default function Home() {
@@ -60,6 +70,7 @@ function StudyHubApp() {
 
   const [joined, setJoined] = useState(false);
   const [topic, setTopic] = useState("");
+  const [durationInput, setDurationInput] = useState("");
   const [status, setStatus] = useState("");
 
   // Presence we're actually authorized to see: only ever populated from our
@@ -73,6 +84,10 @@ function StudyHubApp() {
   // presence data said idle.
   const sessionActive = !!(user && presenceById[user.id]?.topic);
   const [friendIds, setFriendIds] = useState<string[]>([]);
+  // Usernames for friends who've never connected this session, so they're
+  // still listed (as offline) instead of only appearing once they show up
+  // in presenceById. This will become the face-down card state later.
+  const [friendUsernames, setFriendUsernames] = useState<Record<string, string>>({});
   const [addFriendInput, setAddFriendInput] = useState("");
   const [addFriendStatus, setAddFriendStatus] = useState("");
   const [inviteLink, setInviteLink] = useState("");
@@ -134,7 +149,9 @@ function StudyHubApp() {
     // stale-value window for it.
     setPresenceById({});
     setFriendIds([]);
+    setFriendUsernames({});
     setTopic("");
+    setDurationInput("");
     setJoined(false);
     setStatus("");
     setAddFriendInput("");
@@ -165,7 +182,7 @@ function StudyHubApp() {
       if (epochRef.current !== myEpoch) return;
       setStatus("connection: " + subStatus);
       if (subStatus === "SUBSCRIBED") {
-        await channel.track({ name: displayName, topic: null, started_at: null });
+        await channel.track({ name: displayName, topic: null, started_at: null, duration_minutes: null });
         setJoined(true);
       }
     });
@@ -187,10 +204,11 @@ function StudyHubApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, isSignedIn, sessionReady, user?.id]);
 
-  // Live-update our friend list the moment someone adds us, instead of only
-  // picking it up on next page load. Relies on the "users can read their own
-  // friendships" RLS policy in schema.sql -- Postgres Changes only ever
-  // delivers rows that policy already lets this user select.
+  // Live-update our friend list the moment someone adds OR removes us,
+  // instead of only picking it up on next page load. Relies on the "users
+  // can read their own friendships" RLS policy in schema.sql -- Postgres
+  // Changes only ever delivers rows that policy already lets this user
+  // select.
   useEffect(() => {
     const supabase = supabaseRef.current;
     if (!supabase || !user || !sessionReady) return;
@@ -207,6 +225,19 @@ function StudyHubApp() {
           setFriendIds((prev) => (prev.includes(newFriendId) ? prev : [...prev, newFriendId]));
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "friendships", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          if (epochRef.current !== myEpoch) return;
+          // Fires on the removed friend's own client the instant the other
+          // person removes them. Deliberately silent -- dropFriendLocally
+          // only updates state (the entry just disappears from the list),
+          // no toast/message saying they were removed.
+          const removedFriendId = payload.old.friend_id as string;
+          dropFriendLocally(removedFriendId);
+        },
+      )
       .subscribe();
 
     return () => {
@@ -215,6 +246,28 @@ function StudyHubApp() {
     // See the join effect above for why user?.id/sessionReady, not user/session.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, isSignedIn, sessionReady, user?.id]);
+
+  // So a friend who's never connected this session still shows up (as
+  // offline) instead of only appearing once presenceById has data for them.
+  useEffect(() => {
+    const supabase = supabaseRef.current;
+    const missing = friendIds.filter((id) => !(id in friendUsernames));
+    if (!supabase || missing.length === 0) return;
+    const myEpoch = epochRef.current;
+
+    supabase
+      .from("profiles")
+      .select("id, username")
+      .in("id", missing)
+      .then(({ data, error }) => {
+        if (error || !data || epochRef.current !== myEpoch) return;
+        setFriendUsernames((prev) => {
+          const next = { ...prev };
+          for (const row of data) next[row.id] = row.username;
+          return next;
+        });
+      });
+  }, [friendIds, friendUsernames]);
 
   // Open one private, read-only channel per friend so we can see their
   // status -- this only works because schema.sql's RLS policies authorize us
@@ -257,10 +310,12 @@ function StudyHubApp() {
     const displayName = user?.firstName || user?.username || "Student";
     if (!channel || !user) return;
     const chosenTopic = topic.trim() || "studying";
+    const parsedDuration = parseInt(durationInput, 10);
     await channel.track({
       name: displayName,
       topic: chosenTopic,
       started_at: new Date().toISOString(),
+      duration_minutes: Number.isFinite(parsedDuration) && parsedDuration > 0 ? parsedDuration : null,
     });
   }
 
@@ -268,7 +323,7 @@ function StudyHubApp() {
     const channel = ownChannelRef.current;
     const displayName = user?.firstName || user?.username || "Student";
     if (!channel) return;
-    await channel.track({ name: displayName, topic: null, started_at: null });
+    await channel.track({ name: displayName, topic: null, started_at: null, duration_minutes: null });
   }
 
   async function handleAddFriend() {
@@ -286,8 +341,44 @@ function StudyHubApp() {
     refreshFriendIds(supabase, user.id, epochRef.current);
   }
 
+  // Shared by both directions of "unfriend": the person who clicked Remove,
+  // and -- via the DELETE listener below -- the person who got removed.
+  // Tears down their channel ourselves, since removing the DB row doesn't by
+  // itself close a subscription we already opened; without this they could
+  // reappear from a stray late event.
+  function dropFriendLocally(friendId: string) {
+    friendChannelsRef.current.get(friendId)?.unsubscribe();
+    friendChannelsRef.current.delete(friendId);
+    setFriendIds((prev) => prev.filter((id) => id !== friendId));
+    setPresenceById((prev) => {
+      const next = { ...prev };
+      delete next[friendId];
+      return next;
+    });
+    setFriendUsernames((prev) => {
+      const next = { ...prev };
+      delete next[friendId];
+      return next;
+    });
+  }
+
+  async function handleRemoveFriend(friendId: string, username: string) {
+    const supabase = supabaseRef.current;
+    if (!supabase) return;
+    const { error } = await supabase.rpc("remove_friend", { friend_username: username });
+    if (error) {
+      setAddFriendStatus(error.message);
+      return;
+    }
+    dropFriendLocally(friendId);
+  }
+
   const online = Object.entries(presenceById).filter(([, p]) => !!p.topic);
   const idle = Object.entries(presenceById).filter(([, p]) => !p.topic);
+  // Friends with no presence data at all this session -- never connected,
+  // not just idle. Will become the face-down card state later; for now a
+  // plain list is enough to confirm the friend list itself is correct.
+  const offline = friendIds.filter((id) => !(id in presenceById));
 
   return (
     <main style={{ maxWidth: 480, margin: "40px auto", padding: "0 16px", fontFamily: "Arial, sans-serif" }}>
@@ -302,6 +393,14 @@ function StudyHubApp() {
             placeholder="What are you working on?"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
+            style={{ padding: 8, fontSize: "1rem", width: "100%", marginBottom: 8, boxSizing: "border-box" }}
+          />
+          <input
+            type="number"
+            min={1}
+            placeholder="Timer in minutes (optional)"
+            value={durationInput}
+            onChange={(e) => setDurationInput(e.target.value)}
             style={{ padding: 8, fontSize: "1rem", width: "100%", marginBottom: 8, boxSizing: "border-box" }}
           />
           {!sessionActive ? (
@@ -324,12 +423,46 @@ function StudyHubApp() {
                 {p.topic
                   ? `🟢 ${p.name} — ${p.topic} (started ${timeAgo(p.started_at)})`
                   : `⚪ ${p.name} (idle)`}
+                {p.topic && timeLeft(p.started_at, p.duration_minutes) && (
+                  <span style={{ marginLeft: 6, color: "#666" }}>
+                    · {timeLeft(p.started_at, p.duration_minutes)}
+                  </span>
+                )}
                 {id === user?.id && " (you)"}
+                {id !== user?.id && friendUsernames[id] && (
+                  <button
+                    onClick={() => handleRemoveFriend(id, friendUsernames[id])}
+                    style={{ marginLeft: 10, fontSize: "0.75rem", padding: "2px 8px" }}
+                  >
+                    Remove
+                  </button>
+                )}
               </li>
             ))}
             {online.length === 0 && idle.length === 0 && (
               <li style={{ padding: 8, color: "#888" }}>No friends online yet.</li>
             )}
+          </ul>
+
+          <h3 style={{ marginTop: 24 }}>Offline friends (testing only)</h3>
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {offline.map((id) => (
+              <li
+                key={id}
+                style={{ padding: 8, border: "1px solid #ccc", marginBottom: 6, borderRadius: 4, color: "#888" }}
+              >
+                ⚫ {friendUsernames[id] ?? id} (offline)
+                {friendUsernames[id] && (
+                  <button
+                    onClick={() => handleRemoveFriend(id, friendUsernames[id])}
+                    style={{ marginLeft: 10, fontSize: "0.75rem", padding: "2px 8px" }}
+                  >
+                    Remove
+                  </button>
+                )}
+              </li>
+            ))}
+            {offline.length === 0 && <li style={{ padding: 8, color: "#888" }}>No offline friends.</li>}
           </ul>
           <div style={{ fontSize: "0.8rem", color: "#666", marginTop: 10 }}>{status}</div>
 

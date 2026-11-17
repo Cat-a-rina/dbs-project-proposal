@@ -138,60 +138,136 @@
   .tech-card p { margin: 0; font-size: 0.85rem; color: var(--muted); }
   .tbd { color: var(--muted); font-style: italic; }
 
-  /* Feedback section */
-  #feedback-list { margin: 16px 0; }
-  .feedback-entry {
-    background: #fdfdfc;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 12px 14px;
-    margin-bottom: 10px;
-    position: relative;
-  }
-  .feedback-entry .meta {
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-bottom: 4px;
-  }
-  .feedback-entry button.remove {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 0.8rem;
-  }
-  .feedback-entry button.remove:hover { color: var(--red); }
-  .feedback-form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .feedback-form input, .feedback-form textarea, .feedback-form select {
-    font-family: inherit;
-    font-size: 0.95rem;
-    padding: 8px 10px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-  }
-  .feedback-form textarea { min-height: 70px; resize: vertical; }
-  .feedback-form .row { display: flex; gap: 10px; }
-  .feedback-form .row > * { flex: 1; }
-  .feedback-form button[type="submit"] {
-    align-self: flex-start;
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 9px 18px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    cursor: pointer;
-  }
-  .feedback-form button[type="submit"]:hover { opacity: 0.9; }
-  .empty-note { color: var(--muted); font-size: 0.88rem; font-style: italic; }
   .save-note { font-size: 0.78rem; color: var(--muted); margin-top: 8px; }
+
+  /* ===== Mini design system panel (scoped, independent of the vars above) ===== */
+  .ds-frame {
+    border: 1px solid #2e2140;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f0f6fb;
+    margin-top: 12px;
+    font-family: 'Segoe UI', sans-serif;
+    color: #2e2140;
+  }
+  .ds-titlebar {
+    background: #e4edf6;
+    border-bottom: 1px solid #2e2140;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ds-titlebar .ds-tdot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .ds-titlebar .r { background: #e07a5f; }
+  .ds-titlebar .a { background: #c98a1f; }
+  .ds-titlebar .g { background: #2f8f4e; }
+  .ds-titlebar .ds-url { margin-left: 8px; font-size: 0.72rem; color: #6b5d7a; }
+  .ds-body { padding: 18px 20px 22px; }
+  .ds-heading { margin: 0 0 16px; font-size: 1.05rem; font-weight: 800; }
+  .ds-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .ds-block {
+    background: #ffffff;
+    border: 2px solid #2e2140;
+    border-radius: 10px;
+    box-shadow: 5px 5px 0 0 #6fa8d6;
+    padding: 12px 14px;
+  }
+  .ds-block-wide { grid-column: 1 / -1; }
+  .ds-label {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b5d7a;
+    margin-bottom: 10px;
+  }
+
+  /* 1. color roles */
+  .ds-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ds-swatch {
+    width: 68px; height: 44px; border-radius: 6px; border: 2px solid #2e2140;
+    display: flex; align-items: flex-end; justify-content: center;
+    font-size: 0.6rem; font-weight: 700; padding-bottom: 3px;
+  }
+
+  /* 2. type roles */
+  .ds-type-display { font-size: 1.5rem; font-weight: 800; }
+  .ds-type-heading { font-size: 1rem; font-weight: 700; margin-top: 4px; }
+  .ds-type-body { font-size: 0.88rem; margin-top: 4px; }
+  .ds-type-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.05em; color: #2f8f4e; margin-top: 6px; }
+
+  /* 3. spacing + shape */
+  .ds-spacing-row { display: flex; align-items: flex-end; gap: 5px; height: 28px; margin-bottom: 10px; }
+  .ds-spacing-row div { width: 10px; background: #a8d8ff; border: 1px solid #2e2140; }
+  .ds-shape-row { display: flex; gap: 10px; align-items: center; }
+  .ds-shape-square { width: 26px; height: 26px; border: 2px solid #2e2140; }
+  .ds-shape-rounded { width: 26px; height: 26px; border: 2px solid #2e2140; border-radius: 8px; }
+  .ds-shape-circle { width: 26px; height: 26px; border: 2px solid #2e2140; border-radius: 50%; }
+  .ds-hint { font-size: 0.68rem; color: #6b5d7a; margin-top: 8px; }
+
+  /* 4. components */
+  .ds-components-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .ds-btn-primary, .ds-btn-secondary {
+    font-family: inherit; font-weight: 800; font-size: 0.8rem;
+    border: 2px solid #2e2140; border-radius: 10px; padding: 7px 14px;
+    box-shadow: 4px 4px 0 0 #6fa8d6; cursor: pointer;
+  }
+  .ds-btn-primary { background: #c9f7d8; color: #2e2140; }
+  .ds-btn-secondary { background: #ffffff; color: #2e2140; }
+  .ds-input-wrap { position: relative; }
+  .ds-input {
+    font-family: inherit; font-size: 0.8rem; border: 2px solid #2e2140; border-radius: 10px;
+    padding: 7px 26px 7px 10px; width: 130px;
+  }
+  .ds-input-x { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; color: #6b5d7a; }
+  .ds-toggle { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; }
+  .ds-chip {
+    display: inline-flex; align-items: center; gap: 5px; border: 2px solid #2e2140; border-radius: 999px;
+    padding: 4px 10px; font-size: 0.78rem; font-weight: 700; background: #fff;
+  }
+  .ds-chip-dot { width: 7px; height: 7px; border-radius: 50%; background: #2f8f4e; display: inline-block; }
+  .ds-badge {
+    background: #2e2140; color: #fff; font-size: 0.65rem; font-weight: 800;
+    border-radius: 999px; padding: 3px 9px;
+  }
+  .ds-card-row { display: flex; gap: 10px; }
+  .ds-card-back, .ds-card-front {
+    width: 110px; height: 70px; border: 2px solid #2e2140; border-radius: 10px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    box-shadow: 4px 4px 0 0 #6fa8d6; font-size: 0.68rem;
+  }
+  .ds-card-back {
+    color: #fff; font-weight: 800; letter-spacing: 0.08em;
+    background: repeating-linear-gradient(45deg, #111, #111 6px, #333 6px, #333 12px);
+  }
+  .ds-card-front { background: #fff; border-color: #28c76f; box-shadow: 4px 4px 0 0 #1f9d57; }
+  .ds-card-name { font-weight: 800; }
+  .ds-card-topic { opacity: 0.8; }
+  .ds-card-live { color: #1f9d57; font-weight: 800; margin-top: 2px; }
+
+  /* 5. control states */
+  .ds-control-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 6px; }
+  .ds-control-row .ds-btn-primary.ds-hover { filter: brightness(0.96); }
+  .ds-control-row .ds-btn-primary.ds-focus { outline: 3px solid #6fa8d6; outline-offset: 2px; }
+  .ds-control-row .ds-btn-primary.ds-pressed { transform: translate(4px, 4px); box-shadow: 0 0 0 0 #6fa8d6; }
+  .ds-control-row .ds-btn-primary.ds-selected { background: #a8d8ff; }
+  .ds-control-row .ds-btn-primary[disabled] { opacity: 0.4; cursor: not-allowed; }
+  .ds-control-labels { display: flex; gap: 10px; font-size: 0.65rem; color: #6b5d7a; }
+  .ds-control-labels span { width: 72px; text-align: center; }
+
+  /* 6. UI states */
+  .ds-state-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .ds-state-box {
+    flex: 1; min-width: 120px; border: 2px solid #2e2140; border-radius: 10px;
+    padding: 10px; font-size: 0.72rem; text-align: center; background: #fff;
+  }
+  .ds-state-icon { font-size: 1.1rem; margin-bottom: 4px; }
+  .ds-spin { display: inline-block; animation: ds-spin 1.2s linear infinite; }
+  @keyframes ds-spin { to { transform: rotate(360deg); } }
+  .ds-state-error { border-color: #c0392b; color: #c0392b; }
+  .ds-state-success { border-color: #2f8f4e; color: #2f8f4e; }
+  @media (max-width: 600px) { .ds-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -202,6 +278,120 @@
     <p class="tagline">A lightweight, ambient study-presence app for the friends you already have — see who's live, what they're working on, and study alongside them without scheduling anything.</p>
     <div class="meta-row">Design, Build, Ship — Project Proposal · Last updated: <span id="today"></span></div>
   </header>
+
+  <!-- V2 NOTES -->
+  <section>
+    <h2>V2 notes (ongoing)</h2>
+    <p>Running list of v2 decisions and ideas from scoping conversations, not yet slotted into specific weeks in the roadmap below. Logged here as they come up so they don't only exist in chat history.</p>
+
+    <h3>Mini design system</h3>
+    <p class="hint" style="margin-bottom:10px; color:var(--muted); font-size:0.85rem;">A small-scale visual library in the selected soft-brutalism variant (Mint + Sky Blue, from <code>projectv1/neobrutalism-soft-variants.html</code>, option 3) — components in every state, not just a color list. Not yet wired into <code>study-hub/</code>.</p>
+
+    <div class="ds-frame">
+      <div class="ds-titlebar">
+        <span class="ds-tdot r"></span><span class="ds-tdot a"></span><span class="ds-tdot g"></span>
+        <span class="ds-url">/design-system</span>
+      </div>
+      <div class="ds-body">
+        <div class="ds-heading">Study-Hub · Design System</div>
+        <div class="ds-grid">
+          <div class="ds-block">
+            <div class="ds-label">① Color roles</div>
+            <div class="ds-swatches">
+              <div class="ds-swatch" style="background:#f0f6fb;">Bg</div>
+              <div class="ds-swatch" style="background:#ffffff;">Surface</div>
+              <div class="ds-swatch" style="background:#2e2140; color:#fff;">Text</div>
+              <div class="ds-swatch" style="background:#8d7fa0; color:#fff;">Muted</div>
+              <div class="ds-swatch" style="background:#2e2140; color:#fff;">Border</div>
+              <div class="ds-swatch" style="background:#c9f7d8;">Accent</div>
+            </div>
+          </div>
+          <div class="ds-block">
+            <div class="ds-label">② Type roles</div>
+            <div class="ds-type-display">12 min</div>
+            <div class="ds-type-heading">sustainability</div>
+            <div class="ds-type-body">catarina — started 12 min ago</div>
+            <div class="ds-type-label">● LIVE</div>
+          </div>
+          <div class="ds-block">
+            <div class="ds-label">③ Spacing &amp; shape</div>
+            <div class="ds-spacing-row">
+              <div style="height:4px;"></div><div style="height:8px;"></div><div style="height:14px;"></div><div style="height:18px;"></div><div style="height:24px;"></div>
+            </div>
+            <div class="ds-shape-row">
+              <div class="ds-shape-square"></div><div class="ds-shape-rounded"></div><div class="ds-shape-circle"></div>
+            </div>
+            <div class="ds-hint">4 · 8 · 14 · 18 · 24px — 10px corners, hard offset shadow</div>
+          </div>
+          <div class="ds-block ds-block-wide">
+            <div class="ds-label">④ Components</div>
+            <div class="ds-components-row">
+              <button class="ds-btn-primary">Start Session</button>
+              <button class="ds-btn-secondary">Stop</button>
+              <div class="ds-input-wrap"><input class="ds-input" placeholder="their username" readonly><span class="ds-input-x">✕</span></div>
+              <label class="ds-toggle"><input type="checkbox">Grayscale</label>
+              <span class="ds-chip"><span class="ds-chip-dot"></span>catarina</span>
+              <span class="ds-badge">LIVE</span>
+            </div>
+            <div class="ds-card-row">
+              <div class="ds-card-back">OFFLINE / IDLE</div>
+              <div class="ds-card-front">
+                <div class="ds-card-name">tester1</div>
+                <div class="ds-card-topic">sustainability</div>
+                <div class="ds-card-live">● LIVE · 22 min left</div>
+              </div>
+            </div>
+          </div>
+          <div class="ds-block ds-block-wide">
+            <div class="ds-label">⑤ Control states</div>
+            <div class="ds-control-row">
+              <button class="ds-btn-primary">Add</button>
+              <button class="ds-btn-primary ds-hover">Add</button>
+              <button class="ds-btn-primary ds-focus">Add</button>
+              <button class="ds-btn-primary ds-pressed">Add</button>
+              <button class="ds-btn-primary ds-selected">✓ Added</button>
+              <button class="ds-btn-primary" disabled>Add</button>
+            </div>
+            <div class="ds-control-labels">
+              <span>Rest</span><span>Hover</span><span>Focus</span><span>Pressed</span><span>Selected</span><span>Disabled</span>
+            </div>
+          </div>
+          <div class="ds-block ds-block-wide">
+            <div class="ds-label">⑥ UI states</div>
+            <div class="ds-state-row">
+              <div class="ds-state-box"><div class="ds-state-icon">⚪</div>No friends online yet</div>
+              <div class="ds-state-box"><div class="ds-state-icon ds-spin">◐</div>Connecting…</div>
+              <div class="ds-state-box ds-state-error"><div class="ds-state-icon">✕</div>Couldn't add friend</div>
+              <div class="ds-state-box ds-state-success"><div class="ds-state-icon">✓</div>Added catarina</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="hint" style="margin-top:12px; color:var(--muted); font-size:0.82rem;">Two rules the panel above can't show on its own: grayscale (per-person toggle, not system-wide) desaturates <code>accent</code>/<code>accent2</code> to two distinct grays and keeps status dots in the same darkest-to-lightest order, so meaning still reads without hue. And the card's face-down state covers <em>both</em> offline and idle — only "active" flips to face-up; the flip itself is the live signal, not a user gesture.</p>
+
+    <h3>Other UI decisions</h3>
+    <ul>
+      <li>Display name: freely editable, separate from username. Username stays permanent (used for friend-adding and invite links) and is never user-editable.</li>
+      <li>State icons needed: loading/connecting, button press feedback, success/error toasts (see design system above), and the expanded status-dot palette for the v2 check-in/timeout states.</li>
+      <li>Keyboard accessibility: a full pass — sensible tab order and visible focus rings site-wide, not just the cards.</li>
+      <li>Collectible-card face (when live): minimal — name, topic, start time only. No streak badge, no rarity/style variant.</li>
+    </ul>
+
+    <h3>Features</h3>
+    <ul>
+      <li>Remove friend: mutual — removes both directions at once, matching how adding works — but <strong>silent</strong>. The removed side is updated live (a Postgres Changes <code>DELETE</code> listener, symmetric to the existing <code>INSERT</code> one for adds) but no toast or message ever says "you were removed" — the entry just disappears from the list. Neither side learns who removed whom, without needing removal to be one-sided (a one-sided version was tried briefly and reverted — it solved the wrong problem, since the actual ask was "no notification," not "no shared state change").</li>
+      <li>Pomodoro timer: optional duration. <strong>Revised</strong> from "countdown only, no auto-actions" (v1 test build) to auto-going-idle when it hits zero, with a one-click option to start again.</li>
+      <li>Notifications: possible v2 addition, not yet scoped — unclear whether in-app, push, or what should actually trigger one.</li>
+      <li>Personal task queue: a side panel where a user organizes their own assignments/tasks and reorders them like a playlist (drag to rearrange). Private — visible only to that user, never broadcast to friends or shown on their card. Data-model-wise this is the simplest addition so far: one table scoped entirely to its owner (<code>user_id = auth.jwt()->>'sub'</code>, same pattern as <code>profiles</code>), plus a position/order column for the drag-reorder — no cross-user authorization logic needed at all, unlike friendships or presence.</li>
+    </ul>
+
+    <h3>Card inspiration</h3>
+    <p class="hint" style="margin-bottom:10px; color:var(--muted); font-size:0.85rem;">Reference for the collectible-card look (stat icons, rarity stars, card number) — not our exact style, just the structural idea of a trading-card face.</p>
+    <img src="assets/card-inspo-tangs-world.png" alt="Nine flat-illustration trading cards (Tang's World by @TANGzzZZ_), each showing a character, rarity stars, a row of stat icons, and a card number" style="max-width:100%; border:1px solid var(--line); border-radius:8px; display:block;">
+    <p class="hint" style="margin-top:6px; color:var(--muted); font-size:0.78rem;">Art: "Tang's World" by @TANGzzZZ_ — credited, not ours.</p>
+  </section>
 
   <!-- USERS -->
   <section>
@@ -359,92 +549,10 @@
     </div>
   </section>
 
-  <!-- FEEDBACK -->
-  <section>
-    <h2>Feedback log</h2>
-    <p>Running notes from interviews, playtests, and classmate/instructor feedback. Saved locally in this browser.</p>
-
-    <form class="feedback-form" id="feedback-form">
-      <div class="row">
-        <input type="text" id="fb-source" placeholder="Source (e.g. friend name, instructor, playtest)" required>
-        <input type="date" id="fb-date" required>
-      </div>
-      <textarea id="fb-note" placeholder="What did they say or observe?" required></textarea>
-      <button type="submit">Add entry</button>
-    </form>
-
-    <div id="feedback-list"></div>
-    <p class="empty-note" id="feedback-empty">No feedback logged yet.</p>
-  </section>
-
 </div>
 
 <script>
   document.getElementById('today').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-
-  const STORAGE_KEY = 'studyhub-feedback-log';
-  const form = document.getElementById('feedback-form');
-  const list = document.getElementById('feedback-list');
-  const emptyNote = document.getElementById('feedback-empty');
-
-  function loadEntries() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function saveEntries(entries) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-  }
-
-  function render() {
-    const entries = loadEntries();
-    list.innerHTML = '';
-    emptyNote.style.display = entries.length ? 'none' : 'block';
-    entries.slice().reverse().forEach((entry, idx) => {
-      const realIndex = entries.length - 1 - idx;
-      const div = document.createElement('div');
-      div.className = 'feedback-entry';
-      div.innerHTML = `
-        <button class="remove" data-index="${realIndex}" title="Remove">✕</button>
-        <div class="meta">${escapeHtml(entry.source)} · ${entry.date}</div>
-        <div>${escapeHtml(entry.note)}</div>
-      `;
-      list.appendChild(div);
-    });
-  }
-
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    const entries = loadEntries();
-    entries.push({
-      source: document.getElementById('fb-source').value,
-      date: document.getElementById('fb-date').value,
-      note: document.getElementById('fb-note').value
-    });
-    saveEntries(entries);
-    form.reset();
-    render();
-  });
-
-  list.addEventListener('click', function (e) {
-    if (e.target.classList.contains('remove')) {
-      const entries = loadEntries();
-      entries.splice(Number(e.target.dataset.index), 1);
-      saveEntries(entries);
-      render();
-    }
-  });
-
-  render();
 </script>
 
 </body>
